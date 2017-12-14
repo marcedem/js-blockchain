@@ -64,14 +64,56 @@ class Blockchain{
         this.chain.push(newBlock);
     }
 
+    // We need to add some strategy to make sure our chain is valid
+    isChainValid(){
+        // we loop through our chain, starting from the second block, since genesis block is the original one manually created
+        for(let i = 1; i < this.chain.length; i++){
+            const currentBlock = this.chain[i];
+            const previousBlock = this.chain[i-1];
+
+            const tempBlock = currentBlock.calculateHash();
+            
+            // check is the blocks are properly linked and if the hash is still correct
+            if(currentBlock.hash !== currentBlock.calculateHash()){
+                return false;
+            }
+
+            // check if the block point to the correct previous block
+            if(currentBlock.previousHash !== previousBlock.hash){
+                return false;
+            }
+
+            if(currentBlock === this.getLatestBlock() && currentBlock.calculateHash() === this.getLatestBlock().hash){
+                console.log("LAST BLOCKW");
+            }
+
+            console.log('>>>Block'+i +': ' +this.chain[i].hash);
+            console.log(JSON.stringify(this.chain[i], null, 4));
+        }
+
+        // We return true if everything is correct
+        return true;
+    }
+
 }
 
 // Let's create some marcedemCoin to test our new blockchain
 let marcedemCoin = new Blockchain();
 marcedemCoin.addBlock(new Block(1, "03/02/2017", {amount: 4, sender: 'john', receiver: 'alphonse'}));
 marcedemCoin.addBlock(new Block(2, "04/03/2017", {amount: 12, sender: 'Marcus', receiver: 'Doe Man'}));
+marcedemCoin.addBlock(new Block(3, "05/06/2017", {amount: 8, sender: 'John', receiver: 'Mora'}));
 
-console.log(JSON.stringify(marcedemCoin, null, 4));
+// checking integrity of the blockchain
+console.log('Is blockchain valid? ' + marcedemCoin.isChainValid()+'\n\n');
+
+// Let's try to tamper our block by overriding a block data
+console.log('\n::::: We are going to tamper the block and see the outcome');
+marcedemCoin.chain[3].data = {amount: 14, sender: 'john', receiver: 'alphonse', location: 'Vienn'};
+marcedemCoin.chain[3].hash = marcedemCoin.chain[3].calculateHash();
+
+console.log('Is blockchain valid? ' + marcedemCoin.isChainValid());
+
+// console.log(JSON.stringify(marcedemCoin, null, 4));
 
 
 
