@@ -20,6 +20,9 @@ class Block{
 
         // we add the hash property
         this.hash = this.calculateHash();
+
+        // Random value that can be changed to anything else, but has nothing to do with my block 
+        this.nonce = 0;
     }
 
     /**
@@ -28,7 +31,25 @@ class Block{
      *  We will use SHA256 for this, by importing it via crypto-js library, since it is not natively present in Javascript
      */
     calculateHash(){
-        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).toString();
+        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
+    }
+
+
+    mineBlock(difficulty){
+
+        // making hash of block starting with a certain amount of '0'
+        // loop keeps running until hash start with amount of '0' equal to the difficulty level
+        while(this.hash.substring(0, difficulty) !== Array(difficulty +1).join("0")){
+            
+            // increment the nonce as long as the hash didn't start with enough '0'
+            this.nonce ++;
+
+            // calculate the hash of this new block
+            this.hash = this.calculateHash();
+        }
+
+        // output the hash value of the block we just mined
+        console.log("Block mined: " + this.hash);
     }
 }
 
@@ -36,8 +57,6 @@ class Block{
 class Blockchain{
 
     // responsible of initializing our chain
-
-    // var newArray = oldArray.slice();
     
     constructor(){
         // array of blocks initialized with the genesis block
@@ -45,6 +64,10 @@ class Blockchain{
 
         // we create a new integrity block, initialized with the genesis block
         this.integrityChain = [this.createGenesisBlock().calculateHash()];
+
+
+        // difficulty level: responsible to validate the proof of work
+        this.difficulty = 4;
     }
 
     // first block is added manually, which is called genesis block
@@ -64,7 +87,8 @@ class Blockchain{
         newBlock.previousHash = this.getLatestBlock().hash;
 
         // generate a new hash for our new block
-        newBlock.hash = newBlock.calculateHash();
+        //newBlock.hash = newBlock.calculateHash();
+        newBlock.mineBlock(this.difficulty);
 
         // Now we add the newblock to the chain
         this.chain.push(newBlock);
@@ -117,10 +141,14 @@ class Blockchain{
 
 // Let's create some marcedemCoin to test our new blockchain
 let marcedemCoin = new Blockchain();
+console.log('Mining block 1 .. ');
 marcedemCoin.addBlock(new Block(1, "03/02/2017", {amount: 4, sender: 'john', receiver: 'alphonse'}));
+console.log('\nMining block 2 .. ');
 marcedemCoin.addBlock(new Block(2, "04/03/2017", {amount: 12, sender: 'Marcus', receiver: 'Doe Man'}));
+console.log('\nMining block 3 .. ');
 marcedemCoin.addBlock(new Block(3, "05/06/2017", {amount: 8, sender: 'John', receiver: 'Mora'}));
 
+/*
 // checking integrity of the blockchain
 console.log('Is blockchain valid? ' + marcedemCoin.checkBlockIntegrity()+'\n\n');
 
@@ -133,5 +161,6 @@ console.log('Is blockchain valid again? ' + marcedemCoin.checkBlockIntegrity());
 
 console.log(JSON.stringify(marcedemCoin, null, 4));
 
+*/
 
 
