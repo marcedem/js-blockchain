@@ -36,9 +36,15 @@ class Block{
 class Blockchain{
 
     // responsible of initializing our chain
+
+    // var newArray = oldArray.slice();
+    
     constructor(){
-        // array of blocks 
+        // array of blocks initialized with the genesis block
         this.chain = [this.createGenesisBlock()];
+
+        // we create a new integrity block, initialized with the genesis block
+        this.integrityChain = [this.createGenesisBlock().calculateHash()];
     }
 
     // first block is added manually, which is called genesis block
@@ -62,37 +68,49 @@ class Blockchain{
 
         // Now we add the newblock to the chain
         this.chain.push(newBlock);
+
+        // for every new block, we push a new integrityHash to the integrityChain
+        this.integrityChain.push(this.createIntegrityHash(newBlock));
+      
     }
 
-    // We need to add some strategy to make sure our chain is valid
-    isChainValid(){
-        // we loop through our chain, starting from the second block, since genesis block is the original one manually created
+    // this function is the key assurance to our block integrity.
+    // with the newblock or currentblock, we create a new hash,
+    // but concatenating its hash and its previousHash.
+    // This assure us that, whenever a block has been changed, 
+    // all the previous has to be changed as well, if not the blockchain
+    // will not be invalid.
+    // Or in other words, it makes it impossible to change any content of any block
+
+    createIntegrityHash(newBlock){
+        const integrityHash = newBlock.previousHash + newBlock.hash;
+        return SHA256(integrityHash).toString();                
+    }
+
+
+    // We need to make sure our chain is valid by comparing the integrityChain with the main chain
+    // to proceed: we loop through the main chain
+    // then for every iteration we create a new hash into the integrityChain 
+    // by using the "createIntegrityHash" function
+    // then we compare with the integrityChain to see if the current new hash is present
+    // if the hash is not present, the integritycheck (boolean) will be false, then we are 
+    // sure that the block has been tampered
+
+    checkBlockIntegrity(){
+
+        // boolean value to check if the chain has been tampered or not
+        var integrityCheck = false;
+
+        // we loop through our chain, starting from the second block, 
+        // since genesis block is the original one manually created
         for(let i = 1; i < this.chain.length; i++){
             const currentBlock = this.chain[i];
-            const previousBlock = this.chain[i-1];
 
-            const tempBlock = currentBlock.calculateHash();
-            
-            // check is the blocks are properly linked and if the hash is still correct
-            if(currentBlock.hash !== currentBlock.calculateHash()){
-                return false;
-            }
-
-            // check if the block point to the correct previous block
-            if(currentBlock.previousHash !== previousBlock.hash){
-                return false;
-            }
-
-            if(currentBlock === this.getLatestBlock() && currentBlock.calculateHash() === this.getLatestBlock().hash){
-                console.log("LAST BLOCKW");
-            }
-
-            console.log('>>>Block'+i +': ' +this.chain[i].hash);
-            console.log(JSON.stringify(this.chain[i], null, 4));
-        }
-
-        // We return true if everything is correct
-        return true;
+            // we verify if the integrityChain contains the same hash values,
+            // as the integrityHash of the currentBlock in the main chain
+            integrityCheck = this.integrityChain.includes(this.createIntegrityHash(currentBlock));
+        } 
+        return integrityCheck;  
     }
 
 }
@@ -104,16 +122,16 @@ marcedemCoin.addBlock(new Block(2, "04/03/2017", {amount: 12, sender: 'Marcus', 
 marcedemCoin.addBlock(new Block(3, "05/06/2017", {amount: 8, sender: 'John', receiver: 'Mora'}));
 
 // checking integrity of the blockchain
-console.log('Is blockchain valid? ' + marcedemCoin.isChainValid()+'\n\n');
+console.log('Is blockchain valid? ' + marcedemCoin.checkBlockIntegrity()+'\n\n');
 
 // Let's try to tamper our block by overriding a block data
 console.log('\n::::: We are going to tamper the block and see the outcome');
-marcedemCoin.chain[3].data = {amount: 14, sender: 'john', receiver: 'alphonse', location: 'Vienn'};
+marcedemCoin.chain[3].data = {amount: 8, sender: 'John', receiver: 'Mora'};
 marcedemCoin.chain[3].hash = marcedemCoin.chain[3].calculateHash();
 
-console.log('Is blockchain valid? ' + marcedemCoin.isChainValid());
+console.log('Is blockchain valid again? ' + marcedemCoin.checkBlockIntegrity());
 
-// console.log(JSON.stringify(marcedemCoin, null, 4));
+console.log(JSON.stringify(marcedemCoin, null, 4));
 
 
 
